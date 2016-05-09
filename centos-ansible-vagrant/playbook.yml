@@ -1,0 +1,35 @@
+- hosts: localhost
+  sudo: yes
+  connection: local
+  tasks:
+
+          - name: Installing Libvirt/KVM, git,rpmdevtools
+            yum: name={{item}} state=present
+            with_items:
+                - qemu-kvm
+                - qemu-img
+                - libvirt
+                - libvirt-python
+                - git
+                - rpmdevtools
+
+          - name: Starting libvirtd
+            service: name=libvirtd state=started enabled=yes
+
+          - name: Clone Imagefactory github repository
+            git: repo=https://github.com/redhat-imaging/imagefactory.git dest=/home/vagrant/imagefactory
+
+          - name: Build Imagefactory RPMs
+            command: make rpm
+            args:
+              chdir: /home/vagrant/imagefactory
+
+          - name: Build Imagefactory plugin RPMs
+            command: make rpm
+            args:
+              chdir: /home/vagrant/imagefactory/imagefactory_plugins
+
+          - name: Install the Imagefactory RPMS
+            command: yum localinstall -y ./*
+            args:
+              chdir: /root/rpmbuild/RPMS/noarch
